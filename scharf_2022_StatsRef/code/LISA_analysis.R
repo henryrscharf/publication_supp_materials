@@ -16,15 +16,15 @@ nsim <- 1e4 # for permutation tests
 
 ## moran scatter plot
 W_mat <- listw2mat(W)
-Wx <- W_mat %*% z
+Wz <- W_mat %*% z
 pdf("../fig/moran_scatterplot.pdf")
 par(mar = c(4, 4, 0.1, 0.1))
 pch <- rep(1, n)
 pch[highlight] <- NA
-plot(z, Wx, asp = 1, xlab = "x", ylab = "Wx", pch = pch)
-points(z[highlight], Wx[highlight], pch = 16)
-text(x = z[highlight] - 0.08, y = Wx[highlight], labels = highlight)
-abline(0, coef(lm(Wx ~ z))[2], col = "gray")
+plot(z, Wz, asp = 1, xlab = "z", ylab = "Wz", pch = pch)
+points(z[highlight], Wz[highlight], pch = 16)
+text(x = z[highlight] - 0.08, y = Wz[highlight], labels = highlight)
+abline(0, coef(lm(Wz ~ z))[2], col = "gray")
 abline(h = 0, v = 0, lty = 2, col = "gray")
 dev.off()
 
@@ -32,7 +32,7 @@ LISA_I <- localmoran(y, listw = W)
 SRA@data$LISA_I <- LISA_I[, 1]
 SRA@data$LISA_I_p <- LISA_I[, 5]
 ## double check calculation
-range(z * Wx - LISA_I[, 1])
+range(z * Wz - LISA_I[, 1])
 
 LISA_I_perm <- localmoran_perm(y, listw = W, nsim = nsim)
 SRA@data$LISA_I_perm_p <- LISA_I_perm[, 5]
