@@ -4,7 +4,7 @@ library(spatialreg)
 
 load("../data/cycle_injuries.RData")
 
-highlight <- c(1, 5, 31, 40, 41)
+highlight <- c(1, 5, 7, 26, 31, 40, 41)
 fit <- lm(TotalRateInjury ~ length, data = SRA@data)
 y <- fit$residuals
 SRA@data$residuals <- y
@@ -36,7 +36,7 @@ range(z * Wz - LISA_I[, 1])
 
 LISA_I_perm <- localmoran_perm(y, listw = W, nsim = nsim)
 SRA@data$LISA_I_perm_p <- LISA_I_perm[, 5]
-## plot showing close agreement between exact and permutation-based tests
+## plot showing close agreement between normal and permutation-based tests
 plot(LISA_I[, 5], LISA_I_perm[, 5], xlim = c(0, 0.5), ylim = c(0, 0.5))
 cutoff <- 0.05
 abline(v = cutoff, h = cutoff)
@@ -60,6 +60,12 @@ SRA@data$LISA_I_saddle_p <- summary(LISA_I_saddle)[, 3]
 LISA_I_exact <- localmoran.exact.alt(lm.target, nb = SRA_nb, Omega = Omega)
 SRA@data$LISA_I_exact_p <- print(LISA_I_exact)[, 3] 
 
+## plot showing agreement between saddle and exact tests
+plot(SRA@data$LISA_I_saddle_p, SRA@data$LISA_I_exact_p , xlim = c(0, 1), ylim = c(0, 1))
+cutoff <- 0.05
+abline(v = cutoff, h = cutoff)
+abline(0, 1, lty = 2, col = "gray")
+
 ## Two alternative measures of non-stationarity: Geary's c (also a LISA) and Getis-Ord G
 
 ## Geary's c
@@ -68,7 +74,7 @@ SRA@data$LISA_c <- as.numeric(LISA_c)
 SRA@data$LISA_c_p <- attr(LISA_c, "pseudo-p")[, 4]
 
 ## Getis-Ord G
-local_G <- localG_perm(y, listw = nb2listw(SRA_nb), nsim = nsim)
+local_G <- localG_perm(y + 1, listw = nb2listw(SRA_nb), nsim = nsim, return_internals = T)
 SRA@data$local_G <- as.numeric(local_G)
 SRA@data$local_G_p <- pnorm(local_G)
 
@@ -87,15 +93,16 @@ sapply(pvalue_names, function(test){
 pdf("../fig/resid_map.pdf", width = 8.5, height = 7)
 spplot(SRA, c("residuals", "residuals_SAR", "TotalRateInjury"), 
        names.attr = c("residuals", "residuals (SAR)", "Injury Rate"),
-       col.regions = c(RColorBrewer::brewer.pal(11, "BrBG")), 
+       col.regions = c(RColorBrewer::brewer.pal(11, "BrBG")),
+       sp.layout = list("sp.text", coordinates(SRA)[highlight, ], highlight),
        at = seq(-64, 64, l = 11), as.table = F, layout = c(2, 2))
 dev.off()
 
 pdf("../fig/map_pvalues.pdf", width = 8.5, height = 5)
 spplot(SRA, c('LISA_I_p', 'LISA_I_exact_p', "LISA_c_p", 
-              'LISA_I_perm_p', 'LISA_I_saddle_p', "local_G_p"), 
+              'LISA_I_perm_p', 'LISA_I_saddle_p'), 
        names.attr = c("Moran I normal", "Moran I exact", "Geary's c perm.", 
-                      "Moran I perm.", "Moran I saddle", "Getis-Ord G"),
+                      "Moran I perm.", "Moran I saddle"),
        col.regions = c("darkred", gray.colors(19, end = 1)), at = seq(0, 1, l= 21),
        sp.layout = list("sp.text", coordinates(SRA)[highlight, ], highlight), as.table = T, layout = c(3, 2))
 dev.off()
